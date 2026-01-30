@@ -9,6 +9,11 @@ type SignUpInput = {
   password: string;
 };
 
+type SignInInput = {
+  email: string;
+  password: string;
+};
+
 export const authService = {
   async signUp({ email, username, password }: SignUpInput) {
     // Validation
@@ -51,4 +56,40 @@ export const authService = {
       },
     };
   },
+  
+  async signIn({ email, password }: SignInInput) {
+    // Validation
+    if (!email || !password) {
+      throw { status: 400, message: "Missing or invalid data" };
+    }
+
+    // Email ou mot de passe invalide
+    const user = await authRepository.findByEmail(email);
+    if (!user) {
+      throw { status: 401, message: "Invalid email or password" };
+    }
+
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) {
+      throw { status: 401, message: "Invalid email or password" };
+    }
+
+    const token = jwt.sign(
+      { 
+        userId: user.id, 
+        email: user.email 
+      }, 
+      env.JWT_SECRET, 
+      { expiresIn: "7d" }
+    );
+
+    return { 
+      token, 
+      user: { 
+        id: user.id, 
+        email: user.email, 
+        username: user.username 
+      } 
+    };
+    }
 };
