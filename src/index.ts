@@ -2,6 +2,7 @@ import {createServer} from "http";
 import {env} from "./env";
 import express from "express";
 import cors from "cors";
+import authRoutes from "./auth/auth.route";
 
 // Create Express app
 export const app = express();
@@ -15,6 +16,8 @@ app.use(
 );
 
 app.use(express.json());
+
+app.use("/api/auth", authRoutes);
 
 // Serve static files (Socket.io test client)
 app.use(express.static('public'));
