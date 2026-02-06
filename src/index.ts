@@ -5,6 +5,7 @@ import { Request, Response } from "express";
 import cors from "cors";
 import authRoutes from "./auth/auth.route";
 import { AuthRequest, authenticateJWT } from "./auth/auth.middleware";
+import cardsRoutes from "./cards/cards.route";
 
 // Create Express app
 export const app = express();
@@ -20,6 +21,8 @@ app.use(
 app.use(express.json());
 
 app.use("/api/auth", authRoutes);
+
+app.use("/api/cards", cardsRoutes);
 
 app.get("/api/protected", authenticateJWT, (req: Request, res: Response) => {
   const user = (req as AuthRequest).user;
