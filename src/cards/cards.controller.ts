@@ -1,8 +1,8 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import { prisma } from "../database";
 
 export const cardsController = {
-  async getAll(req: Request, res: Response) {
+  async getAll(res: Response) {
     try {
       const cards = await prisma.card.findMany({
         orderBy: { pokedexNumber: "asc" },
