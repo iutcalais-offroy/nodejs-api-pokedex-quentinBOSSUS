@@ -5,5 +5,8 @@ import { authenticateJWT } from "../auth/auth.middleware";
 const router = Router();
 
 router.post("/", authenticateJWT, deckController.create);
+router.get("/mine", authenticateJWT, deckController.getMine);
+router.get("/:id", authenticateJWT, deckController.getById);
+
 
 export default router;

@@ -19,4 +19,18 @@ export const deckRepository = {
       where: { id: { in: cardIds } },
     });
   },
+
+  findDecksByUserId(userId: number) {
+    return prisma.deck.findMany({
+      where: { userId },
+      include: {
+        cards: {
+          include: {
+            card: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  },
 };

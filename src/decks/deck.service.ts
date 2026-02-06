@@ -1,4 +1,5 @@
 import { deckRepository } from "./deck.repository";
+import { prisma } from "../database";
 
 export const deckService = {
   async createDeck(userId: number, name: string, cardIds: number[]) {
@@ -16,5 +17,16 @@ export const deckService = {
 
     const deck = await deckRepository.createDeck(userId, name, cardIds);
     return deck;
+  },
+
+  async getMyDecks(userId: number) {
+    return deckRepository.findDecksByUserId(userId);
+  },
+
+  async getDeckById(userId: number, deckId: number) {
+    return prisma.deck.findFirst({
+      where: { id: deckId, userId },
+      include: { cards: { include: { card: true } } },
+    });
   },
 };
