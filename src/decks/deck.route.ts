@@ -7,6 +7,7 @@ const router = Router();
 router.post("/", authenticateJWT, deckController.create);
 router.get("/mine", authenticateJWT, deckController.getMine);
 router.get("/:id", authenticateJWT, deckController.getById);
+router.patch("/:id", authenticateJWT, deckController.update);
 
 
 export default router;

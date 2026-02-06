@@ -69,4 +69,31 @@ export const deckController = {
       return res.status(500).json({ error: "Internal server error" });
     }
   },
+
+  async update(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const deckId = Number(req.params.id);
+      
+      if (isNaN(deckId)) {
+        return res.status(400).json({ error: "Invalid deck ID" });
+      }
+
+      const { name, cards } = req.body;
+
+      const updatedDeck = await deckService.updateDeck(req.user.userId, deckId, name, cards);
+
+      return res.status(200).json(updatedDeck);
+    } catch (error: any) {
+      if (error?.status) {
+        return res.status(error.status).json({ error: error.message });
+      }
+
+      console.error(error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  },
 };
