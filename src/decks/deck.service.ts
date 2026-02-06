@@ -65,4 +65,15 @@ export const deckService = {
 
     return updated;
   },
+
+  async deleteDeck(userId: number, deckId: number) {
+    const deck = await prisma.deck.findUnique({ where: { id: deckId } });
+    if (!deck || deck.userId !== userId) return null;
+
+    await prisma.deckCard.deleteMany({ where: { deckId } });
+
+    await prisma.deck.delete({ where: { id: deckId } });
+
+    return true;
+  },
 };
