@@ -1,4 +1,4 @@
-import { prisma } from "../database";
+import { prisma } from '../database'
 
 export const deckRepository = {
   createDeck(userId: number, name: string, cardIds: number[]) {
@@ -7,17 +7,17 @@ export const deckRepository = {
         name,
         userId,
         cards: {
-          create: cardIds.map(cardId => ({ cardId })),
+          create: cardIds.map((cardId) => ({ cardId })),
         },
       },
       include: { cards: true },
-    });
+    })
   },
 
   findCardsByIds(cardIds: number[]) {
     return prisma.card.findMany({
       where: { id: { in: cardIds } },
-    });
+    })
   },
 
   findDecksByUserId(userId: number) {
@@ -30,7 +30,7 @@ export const deckRepository = {
           },
         },
       },
-      orderBy: { createdAt: "desc" },
-    });
+      orderBy: { createdAt: 'desc' },
+    })
   },
-};
+}
