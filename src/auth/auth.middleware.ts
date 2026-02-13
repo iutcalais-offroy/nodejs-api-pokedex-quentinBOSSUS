@@ -1,34 +1,40 @@
-import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-import { env } from "../env";
+import { Request, Response, NextFunction } from 'express'
+import jwt from 'jsonwebtoken'
+import { env } from '../env'
 
 export interface AuthRequest extends Request {
   user?: {
-    userId: number;
-    email: string;
-  };
+    userId: number
+    email: string
+  }
 }
 
-export const authenticateJWT = (req: AuthRequest, res: Response, next: NextFunction): void => {
-  console.log("Headers reçus :", req.headers);
-  const authHeader = req.headers.authorization;
+export const authenticateJWT = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): void => {
+  const authHeader = req.headers.authorization
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    res.status(401).json({ error: "Token missing" });
-    return;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    res.status(401).json({ error: 'Token missing' })
+    return
   }
 
-  const token = authHeader.split(" ")[1];
+  const token = authHeader.split(' ')[1]
 
   try {
-    const decoded = jwt.verify(token, env.JWT_SECRET) as { userId: number; email: string };
+    const decoded = jwt.verify(token, env.JWT_SECRET) as {
+      userId: number
+      email: string
+    }
     req.user = {
       userId: decoded.userId,
       email: decoded.email,
-    };
-    next();
-  } catch (error) {
-    res.status(401).json({ error: "Invalid or expired token" });
-    return;
+    }
+    next()
+  } catch {
+    res.status(401).json({ error: 'Invalid or expired token' })
+    return
   }
-};
+}

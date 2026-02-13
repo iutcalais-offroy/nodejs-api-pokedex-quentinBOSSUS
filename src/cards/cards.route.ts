@@ -1,8 +1,8 @@
-import { Router } from "express";
-import { cardsController } from "./cards.controller";
+import { Router } from 'express'
+import { cardsController } from './cards.controller'
 
-const router = Router();
+const router = Router()
 
-router.get("/", cardsController.getAll);
+router.get('/', cardsController.getAll)
 
-export default router;
+export default router
