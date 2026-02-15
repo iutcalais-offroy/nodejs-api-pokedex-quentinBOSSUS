@@ -7,7 +7,7 @@ import { authRepository } from '../../src/auth/auth.repository'
 vi.mock('bcryptjs')
 vi.mock('jsonwebtoken')
 
-describe('authService', () => {
+describe('authServiceTest', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })

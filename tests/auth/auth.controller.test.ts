@@ -5,7 +5,7 @@ import { authService } from '../../src/auth/auth.service'
 
 vi.mock('../../src/auth/auth.service')
 
-describe('authController', () => {
+describe('authControllerTest', () => {
   let req: Partial<Request>
   let res: Partial<Response>
   let statusMock: ReturnType<typeof vi.fn>
