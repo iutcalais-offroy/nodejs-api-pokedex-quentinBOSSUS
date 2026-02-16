@@ -1,7 +1,24 @@
+/**
+ * @file deck.service.ts - Logique métier pour les decks
+ * @module decks
+ * @author Quentin BOSSUS
+ * @date 2026-02-16
+ * @license MIT
+ */
+
 import { deckRepository } from './deck.repository'
 import { prisma } from '../database'
 
 export const deckService = {
+  /**
+   * Crée un deck pour un utilisateur avec exactement 10 cartes.
+   *
+   * @param userId - ID de l'utilisateur propriétaire
+   * @param name - Nom du deck
+   * @param cardIds - Liste des IDs des cartes à inclure
+   * @returns Le deck créé avec ses cartes
+   * @throws {400} Si le nom est manquant, si le nombre de cartes n'est pas 10 ou si des cartes sont invalides
+   */
   async createDeck(userId: number, name: string, cardIds: number[]) {
     if (!name) {
       throw { status: 400, message: 'Deck name is required' }
@@ -19,10 +36,23 @@ export const deckService = {
     return deck
   },
 
+  /**
+   * Récupère tous les decks appartenant à un utilisateur.
+   *
+   * @param userId - ID de l'utilisateur
+   * @returns Liste des decks avec leurs cartes
+   */
   async getMyDecks(userId: number) {
     return deckRepository.findDecksByUserId(userId)
   },
 
+  /**
+   * Récupère un deck spécifique d'un utilisateur.
+   *
+   * @param userId - ID de l'utilisateur
+   * @param deckId - ID du deck
+   * @returns Le deck trouvé ou null s'il n'existe pas
+   */
   async getDeckById(userId: number, deckId: number) {
     return prisma.deck.findFirst({
       where: { id: deckId, userId },
@@ -30,6 +60,16 @@ export const deckService = {
     })
   },
 
+  /**
+   * Met à jour le nom et/ou les cartes d'un deck.
+   *
+   * @param userId - ID de l'utilisateur propriétaire
+   * @param deckId - ID du deck à mettre à jour
+   * @param name - Nouveau nom du deck (optionnel)
+   * @param cards - Nouvelle liste d'IDs de cartes (optionnel, doit être exactement 10)
+   * @returns Le deck mis à jour ou null si non trouvé ou pas propriétaire
+   * @throws {400} Si rien n'est fourni pour la mise à jour ou si les cartes sont invalides
+   */
   async updateDeck(
     userId: number,
     deckId: number,
@@ -71,6 +111,13 @@ export const deckService = {
     return updated
   },
 
+  /**
+   * Supprime un deck d'un utilisateur.
+   *
+   * @param userId - ID de l'utilisateur propriétaire
+   * @param deckId - ID du deck à supprimer
+   * @returns true si supprimé, null si le deck n'existe pas ou n'appartient pas à l'utilisateur
+   */
   async deleteDeck(userId: number, deckId: number) {
     const deck = await prisma.deck.findUnique({ where: { id: deckId } })
     if (!deck || deck.userId !== userId) return null

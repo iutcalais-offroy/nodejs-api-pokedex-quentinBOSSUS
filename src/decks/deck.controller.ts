@@ -1,3 +1,11 @@
+/**
+ * @file deck.controller.ts - Contrôleur pour les routes liées aux decks
+ * @module decks
+ * @author Quentin BOSSUS
+ * @date 2026-02-16
+ * @license MIT
+ */
+
 import { Response } from 'express'
 import { deckService } from './deck.service'
 import { AuthRequest } from '../auth/auth.middleware'
@@ -17,6 +25,15 @@ function isErrorWithStatus(error: unknown): error is ErrorWithStatus {
 }
 
 export const deckController = {
+  /**
+   * Crée un nouveau deck pour l'utilisateur connecté.
+   *
+   * @param req - Requête HTTP avec `user` et `body` contenant `name` et `cards`
+   * @param res - Réponse HTTP
+   * @returns Le deck créé avec son ID, nom, utilisateur et cartes
+   * @throws {401} Si l'utilisateur n'est pas authentifié
+   * @throws {400|500} En cas d'erreur de validation ou serveur
+   */
   async create(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -41,6 +58,15 @@ export const deckController = {
     }
   },
 
+  /**
+   * Récupère tous les decks de l'utilisateur connecté.
+   *
+   * @param req - Requête HTTP avec `user`
+   * @param res - Réponse HTTP
+   * @returns Liste des decks de l'utilisateur
+   * @throws {401} Si l'utilisateur n'est pas authentifié
+   * @throws {500} En cas d'erreur serveur
+   */
   async getMine(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -59,6 +85,14 @@ export const deckController = {
     }
   },
 
+  /**
+   * Récupère un deck spécifique par son ID pour l'utilisateur connecté.
+   *
+   * @param req - Requête HTTP avec `user` et `params.id`
+   * @param res - Réponse HTTP
+   * @returns Le deck trouvé ou message d'erreur si non trouvé
+   * @throws {400|401|404|500} En cas d'erreur de validation, d'authentification, d'accès ou serveur
+   */
   async getById(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -88,6 +122,14 @@ export const deckController = {
     }
   },
 
+  /**
+   * Met à jour le nom et/ou les cartes d'un deck existant.
+   *
+   * @param req - Requête HTTP avec `user`, `params.id`, et `body` contenant `name` et/ou `cards`
+   * @param res - Réponse HTTP
+   * @returns Le deck mis à jour ou message d'erreur
+   * @throws {400|401|404|500} En cas d'erreur de validation, d'authentification, d'accès ou serveur
+   */
   async update(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -129,6 +171,14 @@ export const deckController = {
     }
   },
 
+  /**
+   * Supprime un deck de l'utilisateur connecté.
+   *
+   * @param req - Requête HTTP avec `user` et `params.id`
+   * @param res - Réponse HTTP
+   * @returns Message de succès ou erreur si non trouvé
+   * @throws {400|401|404|500} En cas d'erreur de validation, d'authentification, d'accès ou serveur
+   */
   async delete(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
