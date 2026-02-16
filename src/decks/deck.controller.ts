@@ -26,7 +26,12 @@ export const deckController = {
       const { name, cards } = req.body
       const deck = await deckService.createDeck(req.user.userId, name, cards)
 
-      return res.status(201).json(deck)
+      return res.status(201).json({
+        id: deck.id,
+        name: deck.name,
+        userId: deck.userId,
+        cards: deck.cards,
+      })
     } catch (error: unknown) {
       if (isErrorWithStatus(error)) {
         return res.status(error.status).json({ error: error.message })
@@ -104,7 +109,17 @@ export const deckController = {
         cards,
       )
 
-      return res.status(200).json(updatedDeck)
+      if (!updatedDeck) {
+        return res
+          .status(404)
+          .json({ error: 'Deck not found or access denied' })
+      }
+
+      return res.status(200).json({
+        id: updatedDeck.id,
+        name: updatedDeck.name,
+        cards: updatedDeck.cards,
+      })
     } catch (error: unknown) {
       if (isErrorWithStatus(error)) {
         return res.status(error.status).json({ error: error.message })
