@@ -1,3 +1,11 @@
+/**
+ * @file auth.service.ts - Logique métier pour l'authentification et la gestion des utilisateurs
+ * @module auth
+ * @author Quentin BOSSUS
+ * @date 2026-02-16
+ * @license MIT
+ */
+
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { authRepository } from './auth.repository'
@@ -15,29 +23,31 @@ type SignInInput = {
 }
 
 export const authService = {
+  /**
+   * Inscrit un nouvel utilisateur et génère un token JWT.
+   * @param param0 - Objet contenant `email`, `username` et `password`.
+   * @returns Un objet contenant le token JWT et les informations de l'utilisateur créé.
+   * @throws {status: 400} Si les données sont manquantes ou invalides.
+   * @throws {status: 409} Si l'email est déjà utilisé.
+   */
   async signUp({ email, username, password }: SignUpInput) {
-    // Validation
     if (!email || !username || !password) {
       throw { status: 400, message: 'Missing or invalid data' }
     }
 
-    // Email unique
     const existingUser = await authRepository.findByEmail(email)
     if (existingUser) {
       throw { status: 409, message: 'Email already used' }
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Create user
     const user = await authRepository.createUser({
       email,
       username,
       password: hashedPassword,
     })
 
-    // JWT (7 jours)
     const token = jwt.sign(
       {
         userId: user.id,
@@ -57,13 +67,18 @@ export const authService = {
     }
   },
 
+  /**
+   * Connecte un utilisateur existant et génère un token JWT.
+   * @param param0 - Objet contenant `email` et `password`.
+   * @returns Un objet contenant le token JWT et les informations de l'utilisateur connecté.
+   * @throws {status: 400} Si les données sont manquantes ou invalides.
+   * @throws {status: 401} Si l'email ou le mot de passe est incorrect.
+   */
   async signIn({ email, password }: SignInInput) {
-    // Validation
     if (!email || !password) {
       throw { status: 400, message: 'Missing or invalid data' }
     }
 
-    // Email ou mot de passe invalide
     const user = await authRepository.findByEmail(email)
     if (!user) {
       throw { status: 401, message: 'Invalid email or password' }
