@@ -1,0 +1,52 @@
+paths:
+  /cards:
+    get:
+      tags:
+        - Cards
+      summary: Liste de toutes les cartes
+      description: Récupère toutes les cartes triées par numéro de Pokédex
+      responses:
+        '200':
+          description: Liste des cartes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      example: 1
+                    name:
+                      type: string
+                      example: 'Eevee'
+                    hp:
+                      type: integer
+                      example: 35
+                    attack:
+                      type: integer
+                      example: 55
+                    type:
+                      type: string
+                      example: 'Normal'
+                    pokedexNumber:
+                      type: integer
+                      example: 133
+                    imgUrl:
+                      type: string
+                      example: 'https://example.com/eevee.png'
+                    createdAt:
+                      type: string
+                      format: date-time
+                      example: '2026-02-16T12:00:00Z'
+                    updatedAt:
+                      type: string
+                      format: date-time
+                      example: '2026-02-16T12:00:00Z'
+        '500':
+          description: Erreur serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

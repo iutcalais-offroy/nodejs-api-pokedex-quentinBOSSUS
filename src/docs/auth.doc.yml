@@ -1,0 +1,126 @@
+paths:
+  /auth/sign-up:
+    post:
+      tags:
+        - Authentication
+      summary: Inscription utilisateur
+      description: Crée un nouvel utilisateur et retourne un token JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - email
+                - password
+              properties:
+                username:
+                  type: string
+                  example: 'Alice'
+                email:
+                  type: string
+                  format: email
+                  example: 'alice@example.com'
+                password:
+                  type: string
+                  format: password
+                  example: 'password123'
+      responses:
+        '201':
+          description: Utilisateur créé et token JWT retourné
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      username:
+                        type: string
+                        example: 'Alice'
+                      email:
+                        type: string
+                        format: email
+                        example: 'alice@example.com'
+        '400':
+          description: Données manquantes ou invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Email déjà utilisé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/sign-in:
+    post:
+      tags:
+        - Authentication
+      summary: Connexion utilisateur
+      description: Authentifie un utilisateur et retourne un token JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: 'alice@example.com'
+                password:
+                  type: string
+                  format: password
+                  example: 'password123'
+      responses:
+        '200':
+          description: Authentification réussie et token JWT retourné
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      username:
+                        type: string
+                        example: 'Alice'
+                      email:
+                        type: string
+                        format: email
+                        example: 'alice@example.com'
+        '400':
+          description: Données manquantes ou invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Email ou mot de passe incorrect
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
