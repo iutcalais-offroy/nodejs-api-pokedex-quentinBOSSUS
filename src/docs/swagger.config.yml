@@ -1,0 +1,140 @@
+openapi: 3.0.0
+info:
+  title: API Documentation
+  version: 1.0.0
+  description: Documentation de l'API avec authentification JWT
+  contact:
+    name: Quentin BOSSUS
+    email: quentin.bossus24@gmail.com
+
+servers:
+  - url: http://localhost:3001
+    description: Serveur de développement
+  - url: https://api.production.com
+    description: Serveur de production
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 'Token JWT à obtenir via /auth/login'
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: 'Alice'
+        email:
+          type: string
+          format: email
+          example: 'alice@example.com'
+
+    Card:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: 'Eevee'
+        hp:
+          type: integer
+          example: 60
+        attack:
+          type: integer
+          example: 50
+        type:
+          type: string
+          enum:
+            [
+              Normal,
+              Fire,
+              Water,
+              Electric,
+              Grass,
+              Ice,
+              Fighting,
+              Poison,
+              Ground,
+              Flying,
+              Psychic,
+              Bug,
+              Rock,
+              Ghost,
+              Dragon,
+              Dark,
+              Steel,
+              Fairy,
+            ]
+          example: Normal
+        pokedexNumber:
+          type: integer
+          example: 133
+        imgUrl:
+          type: string
+          example: 'https://example.com/eevee.png'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    DeckCard:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        deckId:
+          type: integer
+          example: 1
+        cardId:
+          type: integer
+          example: 25
+
+    Deck:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: 'Deck test'
+        userId:
+          type: integer
+          example: 1
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        cards:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeckCard'
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Message d'erreur"
+
+tags:
+  - name: Authentication
+    description: Gestion de l'authentification
+  - name: Cards
+    description: Gestion des cartes Pokémon
+  - name: Decks
+    description: Gestion des decks

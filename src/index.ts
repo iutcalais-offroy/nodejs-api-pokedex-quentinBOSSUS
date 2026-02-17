@@ -7,6 +7,8 @@ import authRoutes from './auth/auth.route'
 import { AuthRequest, authenticateJWT } from './auth/auth.middleware'
 import cardsRoutes from './cards/cards.route'
 import deckRoutes from './decks/deck.route'
+import swaggerUi from 'swagger-ui-express'
+import { swaggerDocument } from './docs'
 
 // Create Express app
 export const app = express()
@@ -30,6 +32,15 @@ app.get('/api/protected', authenticateJWT, (req: Request, res: Response) => {
   const user = (req as AuthRequest).user
   res.json({ message: 'Route protégée OK', user })
 })
+
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDocument, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'API Documentation',
+  }),
+)
 
 // Serve static files (Socket.io test client)
 app.use(express.static('public'))
