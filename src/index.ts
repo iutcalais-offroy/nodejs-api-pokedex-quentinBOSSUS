@@ -9,6 +9,7 @@ import cardsRoutes from './cards/cards.route'
 import deckRoutes from './decks/deck.route'
 import swaggerUi from 'swagger-ui-express'
 import { swaggerDocument } from './docs'
+import { SocketServer } from './socket/SocketServer'
 
 // Create Express app
 export const app = express()
@@ -54,6 +55,8 @@ app.get('/api/health', (_req, res) => {
 if (require.main === module) {
   // Create HTTP server
   const httpServer = createServer(app)
+
+  new SocketServer(httpServer)
 
   // Start server
   try {
