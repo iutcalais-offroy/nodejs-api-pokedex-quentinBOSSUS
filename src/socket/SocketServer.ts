@@ -2,9 +2,36 @@ import { Server as HTTPServer } from 'http'
 import { Server, Socket } from 'socket.io'
 import jwt from 'jsonwebtoken'
 import { prisma } from '../database'
+import { calculateDamage } from '../utils/rules.util'
+import { PokemonType } from '../generated/prisma/client'
+
+type GameCard = {
+  id: number
+  name: string
+  hp: number
+  attack: number
+  type: PokemonType
+}
+
+type PlayerState = {
+  userId: number
+  socketId: string
+  deck: GameCard[]
+  hand: GameCard[]
+  activeCard: GameCard | null
+  score: number
+}
+
+type GameState = {
+  roomId: number
+  players: PlayerState[]
+  currentPlayerSocketId: string
+  currentPlayerUserId: number
+}
 
 export class SocketServer {
   private io: Server
+  private games: Record<number, GameState> = {}
 
   private rooms: Record<
     number,
@@ -46,6 +73,34 @@ export class SocketServer {
       if (socket.data.user?.userId === userId) return socket
     }
     return undefined
+  }
+
+  private playerView(game: GameState, viewerSocketId: string) {
+    const filterCard = (card: GameCard) => ({
+      id: card.id,
+      name: card.name,
+      hp: card.hp,
+      attack: card.attack,
+      type: card.type,
+    })
+
+    return {
+      roomId: game.roomId,
+      currentPlayerUserId: game.currentPlayerUserId,
+      players: game.players.map((p) => ({
+        userId: p.userId,
+        hand:
+          p.socketId === viewerSocketId
+            ? p.hand.map(filterCard)
+            : new Array(p.hand.length).fill(null),
+        activeCard: p.activeCard ? filterCard(p.activeCard) : null,
+        score: p.score,
+      })),
+    }
+  }
+
+  private shuffleCards(array: GameCard[]): GameCard[] {
+    return [...array].sort(() => Math.random() - 0.5)
   }
 
   private initializeSocket() {
@@ -133,14 +188,56 @@ export class SocketServer {
           const hostSocket = this.getSocketByUserId(hostId)
           const guestSocket = this.getSocketByUserId(guestId)
 
-          hostSocket?.emit('gameStarted', {
-            you: { id: hostId, handCount: 10 },
-            opponent: { id: guestId, handCount: 10 },
+          if (!hostSocket || !guestSocket) {
+            socket.emit('error', 'Socket introuvable')
+            return
+          }
+
+          const hostDeck = await prisma.deck.findUnique({
+            where: { id: room.deckId },
+            include: { cards: { include: { card: true } } },
           })
 
-          guestSocket?.emit('gameStarted', {
-            you: { id: guestId, handCount: 10 },
-            opponent: { id: hostId, handCount: 10 },
+          const guestDeck = await prisma.deck.findUnique({
+            where: { id: deckId },
+            include: { cards: { include: { card: true } } },
+          })
+
+          if (!hostDeck || !guestDeck) {
+            socket.emit('error', 'Deck introuvable')
+            return
+          }
+
+          const roomId = data.roomId
+
+          this.games[roomId] = {
+            roomId,
+            players: [
+              {
+                userId: hostId,
+                socketId: hostSocket.id,
+                deck: this.shuffleCards(hostDeck.cards.map((dc) => dc.card)),
+                hand: [],
+                activeCard: null,
+                score: 0,
+              },
+              {
+                userId: guestId,
+                socketId: guestSocket.id,
+                deck: this.shuffleCards(guestDeck.cards.map((dc) => dc.card)),
+                hand: [],
+                activeCard: null,
+                score: 0,
+              },
+            ],
+            currentPlayerSocketId: hostSocket.id,
+            currentPlayerUserId: hostId,
+          }
+
+          this.io.to(String(roomId)).emit('gameStarted', {
+            roomId,
+            currentPlayerSocketId: hostSocket.id,
+            currentPlayerUserId: hostId,
           })
 
           delete this.rooms[data.roomId]
@@ -152,6 +249,139 @@ export class SocketServer {
           )
         },
       )
+
+      socket.on('drawCards', ({ roomId }) => {
+        const game = this.games[roomId]
+        if (!game) {
+          socket.emit('error', 'Partie introuvable')
+          return
+        }
+
+        if (game.currentPlayerUserId !== socket.data.user.userId) {
+          socket.emit('error', 'Pas votre tour')
+          return
+        }
+
+        const player = game.players.find((p) => p.socketId === socket.id)!
+        while (player.hand.length < 5 && player.deck.length > 0) {
+          player.hand.push(player.deck.shift()!)
+        }
+
+        game.players.forEach((p) => {
+          this.io
+            .to(p.socketId)
+            .emit('gameStateUpdated', this.playerView(game, p.socketId))
+        })
+      })
+
+      socket.on('playCard', ({ roomId, cardIndex }) => {
+        const game = this.games[roomId]
+        if (!game) {
+          socket.emit('error', 'Partie introuvable')
+          return
+        }
+        if (game.currentPlayerUserId !== socket.data.user.userId) {
+          socket.emit('error', 'Pas votre tour')
+          return
+        }
+
+        const player = game.players.find((p) => p.socketId === socket.id)!
+        if (cardIndex < 0 || cardIndex >= player.hand.length) {
+          socket.emit('error', 'Index invalide')
+          return
+        }
+
+        if (player.activeCard) {
+          socket.emit('error', 'Carte déjà active')
+          return
+        }
+
+        player.activeCard = player.hand.splice(cardIndex, 1)[0]
+
+        game.players.forEach((p) => {
+          this.io
+            .to(p.socketId)
+            .emit('gameStateUpdated', this.playerView(game, p.socketId))
+        })
+      })
+
+      socket.on('attack', ({ roomId }) => {
+        const game = this.games[roomId]
+        if (!game) {
+          socket.emit('error', 'Partie introuvable')
+          return
+        }
+        if (game.currentPlayerUserId !== socket.data.user.userId) {
+          socket.emit('error', 'Pas votre tour')
+          return
+        }
+
+        const attacker = game.players.find((p) => p.socketId === socket.id)!
+        const defender = game.players.find((p) => p.socketId !== socket.id)!
+
+        if (!attacker.activeCard) {
+          socket.emit('error', 'Pas de carte active')
+          return
+        }
+        if (!defender.activeCard) {
+          socket.emit('error', 'Adversaire sans carte active')
+          return
+        }
+
+        const damage = calculateDamage(
+          attacker.activeCard.attack,
+          attacker.activeCard.type,
+          defender.activeCard.type,
+        )
+
+        defender.activeCard.hp -= damage
+
+        if (defender.activeCard.hp <= 0) {
+          attacker.score += 1
+          defender.activeCard = null
+
+          if (attacker.score >= 3) {
+            this.io.to(String(roomId)).emit('gameEnded', {
+              winner: attacker.userId,
+            })
+            delete this.games[roomId]
+            return
+          }
+        }
+
+        game.currentPlayerSocketId = defender.socketId
+        game.currentPlayerUserId = defender.userId
+
+        game.players.forEach((p) => {
+          this.io
+            .to(p.socketId)
+            .emit('gameStateUpdated', this.playerView(game, p.socketId))
+        })
+      })
+
+      socket.on('endTurn', ({ roomId }) => {
+        const game = this.games[roomId]
+        if (!game) {
+          socket.emit('error', 'Partie introuvable')
+          return
+        }
+        if (game.currentPlayerUserId !== socket.data.user.userId) {
+          socket.emit('error', 'Pas votre tour')
+          return
+        }
+
+        const opponent = game.players.find(
+          (p) => p.userId !== socket.data.user.userId,
+        )!
+        game.currentPlayerUserId = opponent.userId
+        game.currentPlayerSocketId = opponent.socketId
+
+        game.players.forEach((p) => {
+          this.io
+            .to(p.socketId)
+            .emit('gameStateUpdated', this.playerView(game, p.socketId))
+        })
+      })
 
       socket.on('disconnect', () => {})
     })
