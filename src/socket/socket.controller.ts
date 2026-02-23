@@ -1,3 +1,11 @@
+/**
+ * @file socket.controller.ts - Contrôleur Socket.io pour la gestion des rooms et parties
+ * @module socket
+ * @author Quentin BOSSUS
+ * @date 2026-02-23
+ * @license MIT
+ */
+
 import { Server as HTTPServer } from 'http'
 import { Server, Socket } from 'socket.io'
 import jwt from 'jsonwebtoken'
@@ -21,6 +29,10 @@ export class SocketController {
     this.initializeSocket()
   }
 
+  /**
+   * Configure l'authentification JWT et enregistre
+   * tous les événements socket liés aux rooms et aux parties.
+   */
   private initializeSocket() {
     this.io.use((socket, next) => {
       const token = socket.handshake.auth.token
@@ -41,6 +53,10 @@ export class SocketController {
     this.io.on('connection', (socket: Socket) => {
       const user = socket.data.user
 
+      /**
+       * Crée une room en attente pour un joueur hôte.
+       * @param data.deckId - Identifiant du deck utilisé
+       */
       socket.on('createRoom', async (data: { deckId: number | string }) => {
         const deckId = Number(data.deckId)
         if (!(await this.repository.validateDeck(deckId, user.userId))) {
@@ -72,6 +88,9 @@ export class SocketController {
         )
       })
 
+      /**
+       * Retourne la liste des rooms disponibles.
+       */
       socket.on('getRooms', () => {
         const availableRooms = Object.entries(this.repository.getRooms())
           .filter(([, r]) => r.players.length === 1)
@@ -79,6 +98,12 @@ export class SocketController {
         socket.emit('roomsList', availableRooms)
       })
 
+      /**
+       * Permet à un joueur de rejoindre une room existante
+       * et initialise une nouvelle partie.
+       * @param data.roomId - Identifiant de la room
+       * @param data.deckId - Identifiant du deck du joueur
+       */
       socket.on(
         'joinRoom',
         async (data: { roomId: number; deckId: number | string }) => {
@@ -175,6 +200,10 @@ export class SocketController {
         },
       )
 
+      /**
+       * Permet au joueur courant de piocher jusqu'à 5 cartes en main.
+       * @param roomId - Identifiant de la partie
+       */
       socket.on('drawCards', ({ roomId }) => {
         const roomIdNum = Number(roomId)
         const game = this.repository.getGames()[roomIdNum]
@@ -200,6 +229,11 @@ export class SocketController {
         })
       })
 
+      /**
+       * Joue une carte de la main et la place en carte active.
+       * @param roomId - Identifiant de la partie
+       * @param cardIndex - Index de la carte dans la main
+       */
       socket.on('playCard', ({ roomId, cardIndex }) => {
         const roomIdNum = Number(roomId)
         const game = this.repository.getGames()[roomIdNum]
@@ -232,6 +266,11 @@ export class SocketController {
         })
       })
 
+      /**
+       * Exécute une attaque entre les cartes actives des joueurs
+       * et met à jour les points ainsi que le tour courant.
+       * @param roomId - Identifiant de la partie
+       */
       socket.on('attack', ({ roomId }) => {
         const roomIdNum = Number(roomId)
         const game = this.repository.getGames()[roomIdNum]
@@ -287,6 +326,10 @@ export class SocketController {
         })
       })
 
+      /**
+       * Termine le tour du joueur courant et passe la main à l'adversaire.
+       * @param roomId - Identifiant de la partie
+       */
       socket.on('endTurn', ({ roomId }) => {
         const roomIdNum = Number(roomId)
         const game = this.repository.getGames()[roomIdNum]
@@ -312,6 +355,9 @@ export class SocketController {
         })
       })
 
+      /**
+       * Gère la déconnexion d'un joueur.
+       */
       socket.on('disconnect', () => {})
     })
   }
